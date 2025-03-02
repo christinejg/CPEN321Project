@@ -66,7 +66,9 @@ export class JournalController {
             // Keep Existing Media if not provided
             encryptedMedia = existingEntry ? existingEntry.media : [];
         }
-    
+
+        // const emotionAndActivityWeights = await some external API call;
+
         // Update or Insert Journal Entry
         const result = await client.db("cpen321journal").collection("journals")
             .updateOne(

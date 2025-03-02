@@ -7,7 +7,7 @@ db.dropDatabase();
 db.createCollection("users")
 db.users.insertMany([
     {
-        user_id: 1,
+        userID: "1",
         preferred_name: "John",
         createdAt: new Date(),
         paid: false,
@@ -18,7 +18,7 @@ db.users.insertMany([
         ]
     },
     {
-        user_id: 2,
+        userID: "2",
         preferred_name: "Jane",
         createdAt: new Date(),
         paid: true,
@@ -28,14 +28,99 @@ db.users.insertMany([
         ]
     },
     {
-        user_id: 3,
+        userID: "3",
         preferred_name: "mark_taylor",
         createdAt: new Date(),
         paid: false,
         notifications: {enabled: true, time: "9:00"},
         entries: [
             { title: "Another Entry", content: "Today was pretty shit...", date: new Date() }
+        ],
+        activities_tracking: [
+            {name: "Running", averageValue: 1.5, unit: "hours"}
         ]
+    }
+])
+
+db.createCollection("journals")
+db.journals.insertMany([
+    {
+        date: new Date("2025-02-20"),
+        userID: "3",
+        stats: 
+        {
+            emotions:{
+                Happiness: 0.44
+            },
+            activities:{
+                Running: 1
+            }
+        }
+    },
+    {
+        date: new Date("2025-02-21"),
+        userID: "3",
+        stats: 
+        {
+            emotions:{
+                Happiness: 0.64
+            },
+            activities:{
+                Running: 2
+            }
+        }
+    },
+    {
+        date: new Date("2025-02-22"),
+        userID: "3",
+        stats: 
+        {
+            emotions:{
+                Happiness: 0.8
+            },
+            activities:{
+                Running: 4
+            }
+        }
+    },
+    {
+        date: new Date("2025-02-23"),
+        userID: "3",
+        stats: 
+        {
+            emotions:{
+                Happiness: 0.64
+            },
+            activities:{
+                Running: 0.5
+            }
+        }
+    },
+    {
+        date: new Date("2025-02-24"),
+        userID: "3",
+        stats: 
+        {
+            emotions:{
+                Happiness: 0.7
+            },
+            activities:{
+                Running: 3
+            }
+        }
+    },
+    {
+        date: new Date("2025-02-26"),
+        userID: "3",
+        stats: 
+        {
+            emotions:{
+                Happiness: 0.3
+            },
+            activities:{
+                Running: 5
+            }
+        }
     }
 ])
 

@@ -2,6 +2,7 @@ import express, {NextFunction, Request, Response} from "express";
 import { MongoClient } from "mongodb";
 import { client } from "./services";
 import { JournalRoutes } from "./src/routes/JournalRoutes";
+import { AnalysisRoutes } from "./src/routes/AnalysisRoutes";
 import { validationResult } from "express-validator";
 import morgan from "morgan";
 import { UserRoutes } from "./src/routes/UserRoutes";
@@ -30,7 +31,7 @@ if (!admin.apps.length) {
 const stripeSecret = fs.readFileSync(path.join(__dirname, './src/config/cpen321project-stripe-secret.txt'), 'utf8').trim();
 console.log(stripeSecret)
 // const OtherRoutes=[]
-const Routes = [...JournalRoutes, ...UserRoutes];
+const Routes = [...AnalysisRoutes, ...JournalRoutes, ...UserRoutes];
 // const Routes = [...JournalRoutes];
 
 Routes.forEach((route) => {
@@ -82,6 +83,11 @@ app.get('/server-time', (req, res) => {
 // Route to get your name
 app.get('/name', (req, res) => {
     res.json({ firstName: "FirstName", lastName: "Lastname" });
+});
+
+// Add a route for the root URL
+app.get('/', (req, res) => {
+    res.send("API is running...");
 });
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
