@@ -296,7 +296,8 @@ export class JournalController {
                 { date, userID },
                 { $set: { text: encryptedText, media: encryptedMedia , stats: entryStats} }
             );
-    
+            console.log(entryStats)
+            console.log(entryStats.activities)
             res.status(200).json({ activities: entryStats.activities,
             update_success: result.modifiedCount > 0 
         });
