@@ -18,7 +18,7 @@ if (!OPEN_API_KEY) {
 
 
 const prompt  = "You are evaluating journal entries from someone about their day to day. The entry of the journal is freeform, but the output is set json. You are given a list of emotions to track in the form of strings. You are also given a list of objects that represent activities to track. Each object contains the name, on average how much the user does it, and the unit for how often they do it per day. First output is an overall wellbeing score, to be based on the emotion scores, this ranges 0-100. Emotions are the second output that are to be returned by you ranging from 0 to 1, for these emotions, use 0.5 as an equilibrium state and deviate from there as you see fit. And lastly you are to return how long you think, based on entry, certain activities passed were done (AS A NUMBER, NOT A STRING in the units for that activity found in 'unit' param). If you don't think enough info is present to decide on how long it was done for, fill it in with the 'averageValue' variable passed with the activity name in the same object.";
-const outputStructure  = "FOLLOW THIS OUTPUT FORMAT FOR THE API TO WORK CORRECTLY FILL OUT EVERY FIELD: {overallScore: 0-100, emotion: {Joy: 0-1, Sadness: 0-1, Anger: 0-1, Fear: 0-1, Gratitude: 0-1, Neutral: 0-1, Resilience: 0-1, SelfAcceptance: 0-1, Stress: 0-1, SenseOfPurpose: 0-1}, activity: {activityName: {amount: 0}, activityName: {amount: 0}, ...}}";
+const outputStructure  = "FOLLOW THIS OUTPUT FORMAT FOR THE API TO WORK CORRECTLY FILL OUT EVERY FIELD: {overallScore: 0-100, emotion: {Joy: 0-1, Sadness: 0-1, Anger: 0-1, Fear: 0-1, Gratitude: 0-1, Neutral: 0-1, Resilience: 0-1, SelfAcceptance: 0-1, Stress: 0-1, SenseOfPurpose: 0-1}, activity: {activityName: {amount: 0}, activityName: {amount: 0}, ...}}  (NOTE IF THERE ARE NO ACTIVITIES, RETURN activty : {})";
 
 const activitySet = new Set<string>();
 export const emotionsStrings: string[] = ["Joy", "Sadness", "Anger", "Fear", "Gratitude", "Neutral", "Resilience", "SelfAcceptance", "Stress", "SenseOfPurpose"];
@@ -58,7 +58,14 @@ async function getEmbeddings(entry: string, activitiesTracking: {
     averageValue: number, 
     unit: string}[] 
 ) : Promise<{ overallScore: number, emotions: { [key: string]: number }, activities: { [key: string]: number } }> {
-    activitiesTracking.forEach((activity) => activitySet.add(activity.name));
+    if(activitiesTracking){
+        activitiesTracking.forEach((activity) => activitySet.add(activity.name));
+        var activityStrings = activitiesTracking;
+    }
+    else{
+        var activityStrings: { name: string; averageValue: number; unit: string; }[] = [];
+    }
+
     var responseFormatCorrect = false;
     var retries = 0;
     var parsedResponse: z.infer<typeof emotionAndActivitySchema> | null = null;
@@ -71,7 +78,7 @@ async function getEmbeddings(entry: string, activitiesTracking: {
                     model: "gpt-4o-mini",
                     messages: [{ 
                         role: "user", 
-                        content: `${prompt} \n ${outputStructure} \n ${entry} \n Emotions: ${JSON.stringify(emotionsStrings)} \n Activities: ${JSON.stringify(activitiesTracking)}`
+                        content: `${prompt} \n ${outputStructure} \n ${entry} \n Emotions: ${JSON.stringify(emotionsStrings)} \n Activities: ${JSON.stringify(activityStrings)}`
                     }],
                     max_tokens: 500, // Example parameter
                 },
@@ -200,7 +207,7 @@ export class JournalController {
             // Keep Existing Media if not provided
             encryptedMedia = existingEntry ? existingEntry.media : [];
         }
-        var entryStats = {};
+        var entryStats: { overallScore: number ; emotions: {[key: string]: number}; activities: { [key: string]: number }; } = { overallScore: 0, emotions: {}, activities: {} };
         if(text){
             entryStats = await getEmbeddings(text, user.activities_tracking);
         }
@@ -222,7 +229,7 @@ export class JournalController {
                     { upsert: true }
                 );
 
-            return res.status(200).json({ 
+            return res.status(200).json({ activities: entryStats.activities,
                 message: result.upsertedCount > 0 
                     ? "New journal entry created successfully with encrypted text and images!" 
                     : "Existing journal entry updated successfully!"
@@ -276,10 +283,11 @@ export class JournalController {
         }
         
         const key = await deriveKey(googleNumID);
-        var entryStats = {};
+        var entryStats: { overallScore: number ; emotions: {[key: string]: number}; activities: { [key: string]: number }; } = { overallScore: 0, emotions: {}, activities: {} };
         if(text){
             entryStats = await getEmbeddings(text, user.activities_tracking);
         }
+
         const encryptedText = text ? await encryptData(text, key) : "";
         const encryptedMedia = media ? await Promise.all(media.map(async (item: string) => await encryptData(item, key))) : [];
     
@@ -289,7 +297,7 @@ export class JournalController {
                 { $set: { text: encryptedText, media: encryptedMedia , stats: entryStats} }
             );
     
-        res.status(200).json({ 
+            res.status(200).json({ activities: entryStats.activities,
             update_success: result.modifiedCount > 0 
         });
     }
