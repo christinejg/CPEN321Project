@@ -271,7 +271,7 @@ export class JournalController {
     
 
     async putJournal(req: Request, res: Response, next: NextFunction) {
-        const { date, userID, entry_changed, text, media, activities } = req.body;
+        const { date, userID, text_changed, text, media, activities } = req.body;
 
         const googleNumID = await getGoogleNumID(userID);
         if (!googleNumID) {
@@ -286,7 +286,7 @@ export class JournalController {
         var entryStats: { overallScore: number ; emotions: {[key: string]: number}; activities: { [key: string]: number }; } = { overallScore: 0, emotions: {}, activities: {} };
         const encryptedMedia = media ? await Promise.all(media.map(async (item: string) => await encryptData(item, key))) : [];
         // Indicates no changes other than to media
-        if((!text || !entry_changed) && !activities){
+        if((!text || !text_changed) && !activities){
             var result = await client.db("cpen321journal").collection("journals")
             .updateOne(
                 { date, userID },
@@ -295,7 +295,7 @@ export class JournalController {
 
         }
         // New entry, send to LLM api
-        else if(text && entry_changed){
+        else if(text && text_changed){
             entryStats = await getEmbeddings(text, user.activities_tracking);
             const encryptedText = text ? await encryptData(text, key) : "";
             
@@ -308,10 +308,11 @@ export class JournalController {
         }
         // Only activity (and possibly) media changed
         else{
+            entryStats.activities = activities;
             var result = await client.db("cpen321journal").collection("journals")
             .updateOne(
                 { date, userID },
-                { $set: { media: encryptedMedia, "stats.activities": activities } }
+                { $set: { media: encryptedMedia, "stats.activities": entryStats.activities } }
             );
         }
 
